@@ -148,8 +148,8 @@
 //! - `example/macros.rs`: Convenience macro layered on top of this crate, using [linkme][linkme] to register types.
 //! - `example/no_global.rs`: Use a local registry instead of a global one, using [`DeserializeSeed`] implementations
 //!   provided by this crate.
-//! - `example/generic_instantiations`: Create and use registries for _instantiations_ of generic traits/structs. Does
-//!   not handle traits nor structs generically though!
+//! - `example/generic_instantiations.rs`: Create and use registries for _instantiations_ of generic traits/structs.
+//!   Does not handle traits nor structs generically though!
 //!
 //! # Limitations
 //!
