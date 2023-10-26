@@ -1,0 +1,78 @@
+use std::error::Error;
+use std::fmt::Debug;
+
+use once_cell::sync::Lazy;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use serde::ser::{SerializeMap, SerializeTupleStruct};
+
+use serde_flexitos::{deserialize_trait_object, Registry, serialize_trait_object};
+use serde_flexitos::id::{Id, IdObj};
+
+/// Object-safe example trait.
+pub trait Example: erased_serde::Serialize + IdObj + Debug {}
+
+/// Example implementation that returns a constant.
+#[derive(Debug)]
+pub struct Constant<T>(pub T);
+impl<T: Serialize + Id + Debug> Example for Constant<T> {}
+impl<T> Id for Constant<T> {
+  // TODO: this impl does not actually depend on T, but it must be included, meaning we can only get the ID if we
+  //       provide a generic type argument...
+  const ID: &'static str = "Constant";
+}
+
+// Hand-written serialize implementation for Constant.
+impl<T: Serialize + Id> Serialize for Constant<T> {
+  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    struct IdValue<'a, T: Serialize + Id>(&'a T);
+    impl<'a, T: Serialize + Id> Serialize for IdValue<'a, T> {
+      fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let mut map = serializer.serialize_map(Some(1))?;
+        map.serialize_entry(T::ID, self.0)?; // Serialize (ID, value) pair.
+        map.end()
+      }
+    }
+
+    let mut ts = serializer.serialize_tuple_struct("Constant", 1)?;
+    ts.serialize_field(&IdValue(&self.0))?;
+    ts.end()
+  }
+}
+
+
+static EXAMPLE_REGISTRY: Lazy<Registry<dyn Example>> = Lazy::new(|| {
+  let mut registry = Registry::<dyn Example>::new("Example");
+  // TODO: the hard part, register a deserializer that can handle Constant<T> generically.
+  //registry.register(Constant::ID, |d| Ok(Box::new(erased_serde::deserialize::<Constant<T>>(d)?)));
+  registry
+});
+
+impl Serialize for dyn Example {
+  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    serialize_trait_object(serializer, self.id(), self)
+  }
+}
+
+impl<'de> Deserialize<'de> for Box<dyn Example> {
+  fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+    deserialize_trait_object(deserializer, &EXAMPLE_REGISTRY)
+  }
+}
+
+
+// Run serialization roundtrips
+
+fn main() -> Result<(), Box<dyn Error>> {
+  let constant_bool = Constant(true);
+
+  { // `Box<dyn Task>` serialization roundtrip
+    let task: Box<dyn Example> = Box::new(constant_bool);
+    let json = serde_json::to_string(&task)?;
+    println!("`Box<dyn Task>`   serialized: {}", json);
+
+    let roundtrip: Box<dyn Example> = serde_json::from_str(&json)?;
+    println!("`Box<dyn Task>` deserialized: {:?}", roundtrip);
+  }
+
+  Ok(())
+}
