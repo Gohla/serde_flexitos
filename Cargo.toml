@@ -1,8 +1,11 @@
 [package]
 name = "serde_flexitos"
 version = "0.1.0"
+description = "Flexible serialization and deserialization of trait objects with serde"
+repository = "https://github.com/Gohla/serde_flexitos"
 edition = "2021"
-publish = false
+authors = ["Gabriel Konat <gabrielkonat@gmail.com>"]
+license = "Apache-2.0"
 
 [dependencies]
 serde = "1"
