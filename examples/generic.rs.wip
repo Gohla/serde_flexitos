@@ -65,13 +65,13 @@ impl<'de> Deserialize<'de> for Box<dyn Example> {
 fn main() -> Result<(), Box<dyn Error>> {
   let constant_bool = Constant(true);
 
-  { // `Box<dyn Task>` serialization roundtrip
-    let task: Box<dyn Example> = Box::new(constant_bool);
-    let json = serde_json::to_string(&task)?;
-    println!("`Box<dyn Task>`   serialized: {}", json);
+  { // `Box<dyn Example>` serialization roundtrip
+    let example: Box<dyn Example> = Box::new(constant_bool);
+    let json = serde_json::to_string(&example)?;
+    println!("`Box<dyn Example>`   serialized: {}", json);
 
     let roundtrip: Box<dyn Example> = serde_json::from_str(&json)?;
-    println!("`Box<dyn Task>` deserialized: {:?}", roundtrip);
+    println!("`Box<dyn Example>` deserialized: {:?}", roundtrip);
   }
 
   Ok(())

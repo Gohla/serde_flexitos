@@ -18,10 +18,10 @@ macro_rules! create_registry {
   };
   ($trait_object:ident, $register_macro:ident, $registry:ident, $distributed_slice:ident) => {
     #[linkme::distributed_slice]
-    pub static $distributed_slice: [fn(&mut serde_flexitos::Registry<dyn $trait_object>)] = [..];
+    pub static $distributed_slice: [fn(&mut serde_flexitos::MapRegistry<dyn $trait_object>)] = [..];
 
-    static $registry: once_cell::sync::Lazy<serde_flexitos::Registry<dyn $trait_object>> = once_cell::sync::Lazy::new(|| {
-      let mut registry = serde_flexitos::Registry::<dyn $trait_object>::new(stringify!($trait_object));
+    static $registry: once_cell::sync::Lazy<serde_flexitos::MapRegistry<dyn $trait_object>> = once_cell::sync::Lazy::new(|| {
+      let mut registry = serde_flexitos::MapRegistry::<dyn $trait_object>::new(stringify!($trait_object));
       for registry_fn in $distributed_slice {
         registry_fn(&mut registry);
       }
@@ -38,21 +38,30 @@ macro_rules! create_registry {
     impl<'a, 'de> serde::Deserialize<'de> for Box<dyn $trait_object + 'a> {
       #[inline]
       fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
-        serde_flexitos::deserialize_trait_object(deserializer, &$registry)
+        use serde_flexitos::Registry;
+        $registry.deserialize_trait_object(deserializer)
       }
     }
 
     #[macro_export]
     macro_rules! $register_macro {
       ($concrete:ty) => {
-        impl Id for $concrete {
+        impl serde_flexitos::id::Id for $concrete {
           const ID: &'static str = stringify!($concrete);
+        }
+        impl Into<Box<dyn $trait_object>> for $concrete where {
+          #[inline]
+          fn into(self) -> Box<dyn $trait_object> {
+            Box::new(self)
+          }
         }
 
         paste::paste! {
           #[linkme::distributed_slice($distributed_slice)]
-          fn [< __register_ $concrete:snake >](registry: &mut serde_flexitos::Registry<dyn $trait_object>) {
-            registry.register($concrete::ID, |d| Ok(Box::new(erased_serde::deserialize::<$concrete>(d)?)));
+          #[inline]
+          fn [< __register_ $concrete:snake >](registry: &mut serde_flexitos::MapRegistry<dyn $trait_object>) {
+            use serde_flexitos::Registry;
+            registry.register_id_type::<$concrete>();
           }
         }
       }

@@ -5,41 +5,53 @@ use std::fmt::Debug;
 use serde::{Deserialize, Serialize, Serializer};
 use serde::de::DeserializeSeed;
 
-use serde_flexitos::{Registry, serialize_trait_object};
+use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 use serde_flexitos::de::{DeserializeMapWith, DeserializeTraitObject, DeserializeVecWithTraitObject};
 
 // Example trait
 
 pub trait ExampleObj: erased_serde::Serialize + Debug {
-  fn key(&self) -> &'static str;
+  fn id(&self) -> &'static str;
 }
 
 // Example trait implementations
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct Foo(String);
-impl Foo { const KEY: &'static str = "Foo"; }
-impl ExampleObj for Foo { fn key(&self) -> &'static str { Self::KEY } }
+impl Foo {
+  const ID: &'static str = "Foo";
+}
+impl ExampleObj for Foo {
+  fn id(&self) -> &'static str {
+    Self::ID
+  }
+}
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
 struct Bar(usize);
-impl Bar { const KEY: &'static str = "Bar"; }
-impl ExampleObj for Bar { fn key(&self) -> &'static str { Self::KEY } }
+impl Bar {
+  const ID: &'static str = "Bar";
+}
+impl ExampleObj for Bar {
+  fn id(&self) -> &'static str {
+    Self::ID
+  }
+}
 
 // Serialize implementation
 
 impl Serialize for dyn ExampleObj {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-    serialize_trait_object(serializer, self.key(), self)
+    serialize_trait_object(serializer, self.id(), self)
   }
 }
 
 // Run serialization roundtrips
 
 fn main() -> Result<(), Box<dyn Error>> {
-  let mut registry = Registry::<dyn ExampleObj>::new("ExampleObj");
-  registry.register(Foo::KEY, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
-  registry.register(Bar::KEY, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));
+  let mut registry = MapRegistry::<dyn ExampleObj>::new("ExampleObj");
+  registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
+  registry.register(Bar::ID, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));
 
   let foo = Foo("A".to_string());
   let bar = Bar(0);

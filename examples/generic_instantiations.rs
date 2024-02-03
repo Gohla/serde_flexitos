@@ -5,7 +5,7 @@ use std::fmt::Debug;
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
-use serde_flexitos::{deserialize_trait_object, Registry, serialize_trait_object};
+use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 
 // Example trait
 
@@ -30,6 +30,11 @@ impl ExampleObj<usize> for Foo {
   fn key(&self) -> &'static str { Self::USIZE_KEY }
   fn get(&self) -> usize { self.0.len() }
 }
+impl<T> Into<Box<dyn ExampleObj<T>>> for Foo where
+  Foo: ExampleObj<T>
+{
+  fn into(self) -> Box<dyn ExampleObj<T>> { Box::new(self) }
+}
 
 // Actually stores something of the generic type.
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -48,20 +53,25 @@ impl ExampleObj<usize> for Bar<usize> {
   fn key(&self) -> &'static str { Self::KEY }
   fn get(&self) -> usize { self.0 }
 }
+impl<T: 'static> Into<Box<dyn ExampleObj<T>>> for Bar<T> where
+  Bar<T>: ExampleObj<T>
+{
+  fn into(self) -> Box<dyn ExampleObj<T>> { Box::new(self) }
+}
 
 // Registries
 
-static EXAMPLE_OBJ_STRING_REGISTRY: Lazy<Registry<dyn ExampleObj<String>>> = Lazy::new(|| {
-  let mut registry = Registry::<dyn ExampleObj<String>>::new("ExampleObj<String>");
-  registry.register(Foo::STRING_KEY, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
-  registry.register(Bar::<String>::KEY, |d| Ok(Box::new(erased_serde::deserialize::<Bar<String>>(d)?)));
+static EXAMPLE_OBJ_STRING_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<String>>> = Lazy::new(|| {
+  let mut registry = MapRegistry::<dyn ExampleObj<String>>::new("ExampleObj<String>");
+  registry.register_type::<Foo>(Foo::STRING_KEY);
+  registry.register_type::<Bar<String>>(Bar::<String>::KEY);
   registry
 });
 
-static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<Registry<dyn ExampleObj<usize>>> = Lazy::new(|| {
-  let mut registry = Registry::<dyn ExampleObj<usize>>::new("ExampleObj<usize>");
-  registry.register(Foo::USIZE_KEY, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
-  registry.register(Bar::<usize>::KEY, |d| Ok(Box::new(erased_serde::deserialize::<Bar<usize>>(d)?)));
+static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<usize>>> = Lazy::new(|| {
+  let mut registry = MapRegistry::<dyn ExampleObj<usize>>::new("ExampleObj<usize>");
+  registry.register_type::<Foo>(Foo::USIZE_KEY);
+  registry.register_type::<Bar<usize>>(Bar::<usize>::KEY);
   registry
 });
 
@@ -75,13 +85,13 @@ impl<T> Serialize for dyn ExampleObj<T> {
 
 impl<'de> Deserialize<'de> for Box<dyn ExampleObj<String>> {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-    deserialize_trait_object(deserializer, &EXAMPLE_OBJ_STRING_REGISTRY)
+    EXAMPLE_OBJ_STRING_REGISTRY.deserialize_trait_object(deserializer)
   }
 }
 
 impl<'de> Deserialize<'de> for Box<dyn ExampleObj<usize>> {
   fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
-    deserialize_trait_object(deserializer, &EXAMPLE_OBJ_USIZE_REGISTRY)
+    EXAMPLE_OBJ_USIZE_REGISTRY.deserialize_trait_object(deserializer)
   }
 }
 
