@@ -1,7 +1,8 @@
 # Serde FlexiTOS
 
-![Crates.io Version](https://img.shields.io/crates/v/serde_flexitos)
-![GitHub License](https://img.shields.io/github/license/Gohla/serde_flexitos)
+[![crates.io](https://img.shields.io/crates/v/serde_flexitos)](https://crates.io/crates/serde_flexitos)
+[![docs](https://docs.rs/serde_flexitos/badge.svg)](https://docs.rs/serde_flexitos)
+[![GitHub License](https://img.shields.io/github/license/Gohla/serde_flexitos)](https://github.com/Gohla/serde_flexitos/blob/main/LICENSE)
 
 <!-- cargo-rdme start -->
 
