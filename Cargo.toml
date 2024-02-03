@@ -1,6 +1,6 @@
 [package]
 name = "serde_flexitos"
-version = "0.1.0"
+version = "0.2.0"
 description = "Flexible serialization and deserialization of trait objects with serde"
 repository = "https://github.com/Gohla/serde_flexitos"
 edition = "2021"
@@ -40,3 +40,4 @@ pr-run-mode = "plan"
 [workspace.metadata.release]
 tag-name = "release/serde_flexitos/{{version}}"
 tag-message = "Release {{crate_name}} version {{version}}"
+pre-release-commit-message = "Release {{crate_name}} version {{version}}"
