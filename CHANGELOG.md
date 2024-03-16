@@ -22,6 +22,8 @@ All notable changes to this project are documented in this file, based on [Keep 
 - Added convenience `register_type` and `register_id_type` methods to `Registry`.
 
 
+# References
+
 [Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.1...HEAD
 [0.2.1]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.0...release/0.2.1
 [0.2.0]: https://github.com/Gohla/serde_flexitos/compare/release/0.1.0...release/0.2.0
