@@ -7,6 +7,9 @@ All notable changes to this project are documented in this file, based on [Keep 
 
 
 ## [Unreleased]
+### Fixed
+- Prevent infinite recursion by checking that trait objects implement `erased_serde::Serialize`, using the same trick 
+  from the `erased_serde::serialize_trait_object` macro.
 
 
 ## [0.2.0] - 2024-02-03

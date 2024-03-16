@@ -7,6 +7,7 @@ use serde::de::DeserializeSeed;
 
 use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 use serde_flexitos::de::{DeserializeMapWith, DeserializeTraitObject, DeserializeVecWithTraitObject};
+use serde_flexitos::ser::require_erased_serialize_impl;
 
 // Example trait
 
@@ -42,6 +43,10 @@ impl ExampleObj for Bar {
 
 impl Serialize for dyn ExampleObj {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    const fn __check_erased_serialize_supertrait<T: ?Sized + ExampleObj>() {
+      require_erased_serialize_impl::<T>();
+    }
+
     serialize_trait_object(serializer, self.id(), self)
   }
 }

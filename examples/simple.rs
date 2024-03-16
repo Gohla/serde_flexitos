@@ -7,6 +7,7 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::DeserializeOwned;
 
 use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
+use serde_flexitos::ser::require_erased_serialize_impl;
 
 // Example traits
 
@@ -58,8 +59,13 @@ static EXAMPLE_OBJ_REGISTRY: Lazy<MapRegistry<dyn ExampleObj>> = Lazy::new(|| {
 
 // (De)serialize implementations
 
-impl<'a> Serialize for dyn ExampleObj {
+impl<'a> Serialize for dyn ExampleObj + 'a {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    // Check that `ExampleObj` has `erased_serde::Serialize` as a supertrait, preventing infinite recursion at runtime.
+    const fn __check_erased_serialize_supertrait<T: ?Sized + ExampleObj>() {
+      require_erased_serialize_impl::<T>();
+    }
+
     serialize_trait_object(serializer, self.id(), self)
   }
 }

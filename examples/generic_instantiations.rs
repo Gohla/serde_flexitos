@@ -6,6 +6,7 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
+use serde_flexitos::ser::require_erased_serialize_impl;
 
 // Example trait
 
@@ -79,6 +80,10 @@ static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<usize>>> = La
 
 impl<T> Serialize for dyn ExampleObj<T> {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+    const fn __check_erased_serialize_supertrait<T, O: ?Sized + ExampleObj<T>>() {
+      require_erased_serialize_impl::<O>();
+    }
+
     serialize_trait_object(serializer, self.key(), self)
   }
 }

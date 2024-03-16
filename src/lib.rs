@@ -119,6 +119,10 @@
 //!
 //! impl Serialize for dyn Example {
 //!   fn serialize<S: Serializer >(&self, serializer: S) -> Result<S::Ok, S::Error> {
+//!     // Check that `Example` has `erased_serde::Serialize` as a supertrait, preventing infinite recursion at runtime.
+//!     const fn __check_erased_serialize_supertrait<T: ?Sized + Example>() {
+//!       serde_flexitos::ser::require_erased_serialize_impl::<T>();
+//!     }
 //!     serialize_trait_object(serializer, self.id(), self)
 //!   }
 //! }

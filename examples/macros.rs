@@ -31,6 +31,9 @@ macro_rules! create_registry {
     impl serde::Serialize for dyn $trait_object {
       #[inline]
       fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        const fn __check_erased_serialize_supertrait<T: ?Sized + $trait_object>() {
+          serde_flexitos::ser::require_erased_serialize_impl::<T>();
+        }
         serde_flexitos::serialize_trait_object(serializer, self.id(), self)
       }
     }
