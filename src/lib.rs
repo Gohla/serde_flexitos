@@ -117,7 +117,7 @@
 //!
 //! // (De)serialize implementations
 //!
-//! impl Serialize for dyn Example {
+//! impl<'a> Serialize for dyn Example + 'a {
 //!   fn serialize<S: Serializer >(&self, serializer: S) -> Result<S::Ok, S::Error> {
 //!     // Check that `Example` has `erased_serde::Serialize` as a supertrait, preventing infinite recursion at runtime.
 //!     const fn __check_erased_serialize_supertrait<T: ?Sized + Example>() {

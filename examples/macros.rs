@@ -28,7 +28,7 @@ macro_rules! create_registry {
       registry
     });
 
-    impl serde::Serialize for dyn $trait_object {
+    impl<'a> serde::Serialize for dyn $trait_object + 'a {
       #[inline]
       fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         const fn __check_erased_serialize_supertrait<T: ?Sized + $trait_object>() {

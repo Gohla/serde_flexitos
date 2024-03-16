@@ -41,7 +41,7 @@ impl ExampleObj for Bar {
 
 // Serialize implementation
 
-impl Serialize for dyn ExampleObj {
+impl<'a> Serialize for dyn ExampleObj + 'a {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
     const fn __check_erased_serialize_supertrait<T: ?Sized + ExampleObj>() {
       require_erased_serialize_impl::<T>();

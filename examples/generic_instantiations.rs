@@ -78,7 +78,7 @@ static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<usize>>> = La
 
 // (De)serialize implementations
 
-impl<T> Serialize for dyn ExampleObj<T> {
+impl<'a, T> Serialize for dyn ExampleObj<T> + 'a {
   fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
     const fn __check_erased_serialize_supertrait<T, O: ?Sized + ExampleObj<T>>() {
       require_erased_serialize_impl::<O>();
