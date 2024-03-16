@@ -1,10 +1,7 @@
 tag-name = "release/{{version}}"
-tag-message = "Release version {{version}}"
-pre-release-commit-message = "Release version {{version}}"
+tag-message = "Release {{version}}"
+pre-release-commit-message = "Release {{version}}"
 pre-release-replacements = [
-  { file = "CHANGELOG.md", search = "## \\[Unreleased\\]", replace = "## [{{version}}] - {{date}}", exactly = 1 },
-  { file = "CHANGELOG.md", search = "\\[Unreleased\\]:", replace = "[{{version}}]:", exactly = 1 },
-  { file = "CHANGELOG.md", search = "\\.\\.\\.HEAD", replace = "...{{tag_name}}", exactly = 1 },
-  { file = "CHANGELOG.md", search = "<!-- next-header -->", replace = "<!-- next-header -->\n\n\n## [Unreleased]\n", exactly = 1 },
-  { file = "CHANGELOG.md", search = "<!-- next-url -->", replace = "<!-- next-url -->\n[Unreleased]: https://github.com/Gohla/serde_flexitos/compare/{{tag_name}}...HEAD", exactly = 1 },
+  { file = "CHANGELOG.md", search = "## \\[Unreleased\\]", replace = "## [Unreleased]\n\n\n## [{{version}}] - {{date}}", exactly = 1 },
+  { file = "CHANGELOG.md", search = "^\\[Unreleased\\]: ?(?<base>.+?/compare)/(?<prev>.+?)(?:\\.\\.\\.HEAD)", replace = "[Unreleased]: $base/{{tag_name}}...HEAD\n[{{version}}]: $base/$prev...{{tag_name}}", exactly = 1 },
 ]

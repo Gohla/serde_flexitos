@@ -3,9 +3,6 @@
 All notable changes to this project are documented in this file, based on [Keep a Changelog][keepachangelog].
 
 
-<!-- next-header -->
-
-
 ## [Unreleased]
 ### Fixed
 - Prevent infinite recursion by checking that trait objects implement `erased_serde::Serialize`, using the same trick 
@@ -22,9 +19,8 @@ All notable changes to this project are documented in this file, based on [Keep 
 - Added convenience `register_type` and `register_id_type` methods to `Registry`.
 
 
-<!-- next-url -->
-[Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/serde_flexitos/0.2.0...HEAD
-[0.2.0]: https://github.com/Gohla/serde_flexitos/compare/release/serde_flexitos/0.1.0...release/serde_flexitos/0.2.0
-[0.1.0]: https://github.com/Gohla/serde_flexitos/compare/...release/serde_flexitos/0.1.0
+[Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.0...HEAD
+[0.2.0]: https://github.com/Gohla/serde_flexitos/compare/release/0.1.0...release/0.2.0
+[0.1.0]: https://github.com/Gohla/serde_flexitos/compare/...release/0.1.0
 
 [keepachangelog]: https://keepachangelog.com/en/1.0.0/
