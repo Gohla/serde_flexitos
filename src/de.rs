@@ -10,8 +10,8 @@ use serde::Deserialize;
 
 use crate::{DeserializeFn, Registry};
 
-/// Deserialize [`Box<<R as Registry>::TraitObject>`] from a single id-value pair, using the registry to get deserialize
-/// functions for concrete types of the trait object. Implements [`DeserializeSeed`].
+/// Deserialize [`Box<<R as Registry>::TraitObject>`](Self::Value) from a single id-value pair, using the registry to
+/// get deserialize functions for concrete types of the trait object. Implements [`DeserializeSeed`].
 #[repr(transparent)]
 pub struct DeserializeTraitObject<'r, R>(pub &'r R);
 
@@ -62,7 +62,7 @@ impl<'de, R: Registry> Display for DeserializeTraitObject<'_, R> where
 }
 
 
-/// Deserialize [`<R as Registry>::Identifier`] and use it to get its deserialize function from the registry.
+/// Deserialize [`R::Identifier`](Registry::Identifier) and use it to get its deserialize function from the registry.
 #[repr(transparent)]
 struct IdToDeserializeFn<'r, R>(&'r R);
 
@@ -94,8 +94,8 @@ impl<'de, O: ?Sized> DeserializeSeed<'de> for DeserializeWithFn<O> {
 }
 
 
-/// Deserialize [`Vec<Box<<R as Registry>::TraitObject>>`], using the registry to get deserialize functions for concrete
-/// types of the trait object. Implements [`DeserializeSeed`].
+/// Deserialize [`Vec<Box<<R as Registry>::TraitObject>>`](Self::Value), using the registry to get deserialize functions
+/// for concrete types of the trait object. Implements [`DeserializeSeed`].
 #[repr(transparent)]
 pub struct DeserializeVecWithTraitObject<'r, R>(pub &'r R);
 

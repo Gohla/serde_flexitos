@@ -310,7 +310,7 @@ impl<I: Debug> Display for GetError<I> {
 }
 
 
-/// [Registry] implementation mapping unique identifiers of type [`I`] to deserialize functions of trait object type [`O`],
+/// [Registry] implementation mapping unique identifiers of type `I` to deserialize functions of trait object type `O`,
 /// using a [BTreeMap].
 pub struct MapRegistry<O: ?Sized, I = &'static str> {
   deserialize_fns: BTreeMap<I, Option<DeserializeFn<O>>>,
@@ -318,7 +318,7 @@ pub struct MapRegistry<O: ?Sized, I = &'static str> {
 }
 
 impl<O: ?Sized, I> MapRegistry<O, I> {
-  /// Creates a new registry, using `trait_object_name` as the name of [`O`] for diagnostic purposes.
+  /// Creates a new registry, using `trait_object_name` as the name of `O` for diagnostic purposes.
   #[inline]
   pub fn new(trait_object_name: &'static str) -> Self {
     Self {

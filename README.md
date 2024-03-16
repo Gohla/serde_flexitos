@@ -11,28 +11,27 @@ This crate provides types and function for flexible serialization and deserializ
 
 ## Why?
 
-When you need to treat several types that implement a trait *as a single type*, a trait object type `dyn O` is one of
-the most convenient solutions in Rust. If you need (de)serialization for such a trait object, this crate can help
+When you need to treat several types that implement a trait *as a single type*, a trait object type `dyn O` is one
+of the most convenient solutions in Rust. If you need (de)serialization for such a trait object, this crate can help
 provide that.
 
 ## Is this not already possible?
 
-Serializing a trait object is already possible with [erased-serde][erased-serde]'s `erased_serde::Serialize`.
+Serializing a trait object is already possible with [erased-serde][erased-serde]'s [`erased_serde::Serialize`].
 However, erased-serde does not provide a convenient way to *deserialize trait objects*.
 
 To deserialize a trait object, we first need to figure out the concrete type that was serialized, and then use the
-corresponding `Deserialize` implementation of that type to deserialize the value. We cannot use the trait object
-type directly to get the corresponding `Deserialize` implementation, because trait objects must be object safe,
+corresponding [`Deserialize`] implementation of that type to deserialize the value. We cannot use the trait object
+type directly to get the corresponding [`Deserialize`] implementation, because trait objects must be object safe,
 ruling out associated functions (only allowing methods: functions that take a `&self` and variations). But when
 deserializing, we do not have an instance of the trait object (we are instantiating it with deserialization!), thus
-there is no method to call. Therefore, an external mechanism is needed to get `Deserialize` implementations for
+there is no method to call. Therefore, an external mechanism is needed to get [`Deserialize`] implementations for
 concrete types.
 
 Two other solutions exist (to my knowledge), but they make trade-offs that not everyone is willing to make, and
 provide no way to opt-out of those trade-offs:
-
 - [typetag][typetag]: A convenient solution to get (de)serialization for trait objects. However, it uses
-  [inventory][inventory] to register `Deserialize` implementations, which does not work on every platform (for
+  [inventory][inventory] to register [`Deserialize`] implementations, which does not work on every platform (for
   example, WASM). It also registers these implementations globally using a procedural macro that has to be applied
   to every concrete type. Finally, generic traits and generic impls of traits are not supported.
   If you can work within these limitations, [typetag][typetag] is a great crate, and you should probably use it
@@ -52,9 +51,9 @@ registration macro, allowing you to make the trade-off between convenience and f
 
 A trait object is serialized as an id-value pair, also known as the [externally tagged enum representation][exttag],
 where the id is the *unique identifier* for the concrete type of the value, and the value is serialized using the
-trait object's `erased_serde::Serialize` implementation.
+trait object's [`erased_serde::Serialize`] implementation.
 
-A trait object is deserialized by first deserializing the ID, then finding the `Deserialize` implementation of
+A trait object is deserialized by first deserializing the ID, then finding the [`Deserialize`] implementation of
 the concrete type using that ID, and then deserializing the value with that deserialize impl.
 
 An ID must uniquely identify a concrete type of a trait object, and be stable over time, in order for
@@ -63,20 +62,19 @@ deserialization.
 
 ## How do I use this crate?
 
-A registry handles registration of `Deserialize` impls and finding them by ID. For each trait object
+A registry handles registration of [`Deserialize`] impls and finding them by ID. For each trait object
 you wish to deserialize, you must construct a registry and register all concrete types with it. Currently,
-`MapRegistry` is the only registry implementation.
+[`MapRegistry`] is the only registry implementation.
 
 To register a concrete type, we must provide:
-
 1) the ID (`&'static str`) for that concrete type,
 2) a deserialize function that deserializes the concrete type as a boxed trait object.
 
-Traits must have `erased_serde::Serialize` as a supertrait and have a method to retrieve the ID of the concrete
-type. Concrete types of the trait must implement `Serialize`.
+Traits must have [`erased_serde::Serialize`] as a supertrait and have a method to retrieve the ID of the concrete
+type. Concrete types of the trait must implement [`Serialize`].
 
-Then, you can implement `Serialize` for `dyn Trait` using  `serialize_trait_object`, and `Deserialize` for
-`Box<dyn Trait>` using `deserialize_trait_object`(Registry::deserialize_trait_object).
+Then, you can implement [`Serialize`] for `dyn Trait` using  [`serialize_trait_object`], and [`Deserialize`] for
+`Box<dyn Trait>` using `deserialize_trait_object`.
 
 ## Example
 
@@ -127,14 +125,18 @@ static EXAMPLE_REGISTRY: Lazy<MapRegistry<dyn Example>> = Lazy::new(|| {
 
 // (De)serialize implementations
 
-impl Serialize for dyn Example {
-  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+impl<'a> Serialize for dyn Example + 'a {
+  fn serialize<S: Serializer >(&self, serializer: S) -> Result<S::Ok, S::Error> {
+    // Check that `Example` has `erased_serde::Serialize` as a supertrait, preventing infinite recursion at runtime.
+    const fn __check_erased_serialize_supertrait<T: ?Sized + Example>() {
+      serde_flexitos::ser::require_erased_serialize_impl::<T>();
+    }
     serialize_trait_object(serializer, self.id(), self)
   }
 }
 
 impl<'de> Deserialize<'de> for Box<dyn Example> {
-  fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+  fn deserialize<D: Deserializer<'de> >(deserializer: D) -> Result<Self, D::Error> {
     EXAMPLE_REGISTRY.deserialize_trait_object(deserializer)
   }
 }
@@ -153,10 +155,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 Check out the examples for more use-cases:
-
 - `example/simple.rs`: A full version of the above example.
 - `example/macros.rs`: Convenience macro layered on top of this crate, using [linkme][linkme] to register types.
-- `example/no_global.rs`: Use a local registry instead of a global one, using `DeserializeSeed` implementations
+- `example/no_global.rs`: Use a local registry instead of a global one, using [`DeserializeSeed`] implementations
   provided by this crate.
 - `example/generic_instantiations.rs`: Create and use registries for _instantiations_ of generic traits/structs.
   Does not handle traits nor structs generically though!
@@ -185,19 +186,21 @@ serialized externally using a different representation (i.e., not this crate).
 This crate is inspired by the excellent [typetag][typetag] crate.
 
 [serde]: https://crates.io/crates/serde
-
 [erased-serde]: https://crates.io/crates/erased-serde
-
 [exttag]: https://serde.rs/enum-representations.html#externally-tagged
-
 [typetag]: https://crates.io/crates/typetag
-
 [linkme]: https://crates.io/crates/linkme
-
 [inventory]: https://crates.io/crates/inventory
-
 [objs]: https://doc.rust-lang.org/reference/items/traits.html#object-safety
-
 [serde_traitobject]: https://crates.io/crates/serde_traitobject
 
 <!-- cargo-rdme end -->
+
+[`serialize_trait_object`]: https://docs.rs/serde_flexitos/latest/serde_flexitos/fn.serialize_trait_object.html
+[`MapRegistry`]: https://docs.rs/serde_flexitos/latest/serde_flexitos/struct.MapRegistry.html
+
+[`Serialize`]: https://docs.rs/serde/latest/serde/trait.Serialize.html
+[`Deserialize`]: https://docs.rs/serde/latest/serde/trait.Deserialize.html
+[`DeserializeSeed`]: https://docs.rs/serde/latest/serde/de/trait.DeserializeSeed.html
+
+[`erased_serde::Serialize`]: https://docs.rs/erased-serde/latest/erased_serde/trait.Serialize.html

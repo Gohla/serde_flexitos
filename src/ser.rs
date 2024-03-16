@@ -35,5 +35,5 @@ impl<'a, I, O> Serialize for SerializeTraitObject<'_, I, O> where
   }
 }
 
-/// Checks whether [`T`] implements [`erased_serde::Serialize`].
+/// Checks whether `T` implements [`erased_serde::Serialize`].
 pub const fn require_erased_serialize_impl<T: ?Sized + erased_serde::Serialize>() {}
