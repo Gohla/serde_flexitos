@@ -2,9 +2,12 @@
 
 All notable changes to this project are documented in this file, based on [Keep a Changelog][keepachangelog].
 
+
 <!-- next-header -->
 
+
 ## [Unreleased]
+
 
 ## [0.2.0] - 2024-02-03
 ### Changed
@@ -14,6 +17,7 @@ All notable changes to this project are documented in this file, based on [Keep 
 
 ### Added
 - Added convenience `register_type` and `register_id_type` methods to `Registry`.
+
 
 <!-- next-url -->
 [Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/serde_flexitos/0.2.0...HEAD

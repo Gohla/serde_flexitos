@@ -16,4 +16,5 @@ jobs:
       - uses: taiki-e/create-gh-release-action@v1
         with:
           prefix: release/[^/]*/?
+          changelog: CHANGELOG.md
           token: ${{ secrets.GITHUB_TOKEN }}
