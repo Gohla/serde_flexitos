@@ -32,7 +32,7 @@ impl ExampleObj<usize> for Foo {
   fn get(&self) -> usize { self.0.len() }
 }
 impl<T> Into<Box<dyn ExampleObj<T>>> for Foo where
-  Foo: ExampleObj<T>
+  Foo: ExampleObj<T>,
 {
   fn into(self) -> Box<dyn ExampleObj<T>> { Box::new(self) }
 }
@@ -55,7 +55,7 @@ impl ExampleObj<usize> for Bar<usize> {
   fn get(&self) -> usize { self.0 }
 }
 impl<T: 'static> Into<Box<dyn ExampleObj<T>>> for Bar<T> where
-  Bar<T>: ExampleObj<T>
+  Bar<T>: ExampleObj<T>,
 {
   fn into(self) -> Box<dyn ExampleObj<T>> { Box::new(self) }
 }
@@ -79,23 +79,28 @@ static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<usize>>> = La
 // (De)serialize implementations
 
 impl<'a, T> Serialize for dyn ExampleObj<T> + 'a {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where
+    S: Serializer,
+  {
     const fn __check_erased_serialize_supertrait<T, O: ?Sized + ExampleObj<T>>() {
       require_erased_serialize_impl::<O>();
     }
-
     serialize_trait_object(serializer, self.key(), self)
   }
 }
 
 impl<'de> Deserialize<'de> for Box<dyn ExampleObj<String>> {
-  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where
+    D: Deserializer<'de>,
+  {
     EXAMPLE_OBJ_STRING_REGISTRY.deserialize_trait_object(deserializer)
   }
 }
 
 impl<'de> Deserialize<'de> for Box<dyn ExampleObj<usize>> {
-  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where D: Deserializer<'de> {
+  fn deserialize<D>(deserializer: D) -> Result<Self, D::Error> where
+    D: Deserializer<'de>,
+  {
     EXAMPLE_OBJ_USIZE_REGISTRY.deserialize_trait_object(deserializer)
   }
 }

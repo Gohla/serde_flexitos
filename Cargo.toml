@@ -16,7 +16,7 @@ erased-serde = "0.4"
 
 [features]
 default = []
-id_trait = []
+id_trait = ["serde/derive"]
 permissive = []
 
 [dev-dependencies]

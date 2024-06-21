@@ -23,9 +23,7 @@ impl Foo {
   const ID: &'static str = "Foo";
 }
 impl ExampleObj for Foo {
-  fn id(&self) -> &'static str {
-    Self::ID
-  }
+  fn id(&self) -> &'static str { Self::ID }
 }
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
@@ -34,19 +32,16 @@ impl Bar {
   const ID: &'static str = "Bar";
 }
 impl ExampleObj for Bar {
-  fn id(&self) -> &'static str {
-    Self::ID
-  }
+  fn id(&self) -> &'static str { Self::ID }
 }
 
 // Serialize implementation
 
 impl<'a> Serialize for dyn ExampleObj + 'a {
-  fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
+  fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
     const fn __check_erased_serialize_supertrait<T: ?Sized + ExampleObj>() {
       require_erased_serialize_impl::<T>();
     }
-
     serialize_trait_object(serializer, self.id(), self)
   }
 }

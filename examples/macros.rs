@@ -12,16 +12,19 @@ use serde_flexitos::id::{Id, IdObj};
 #[macro_export]
 macro_rules! create_registry {
   ($trait_object:ident, $register_macro:ident) => {
+    create_registry!($trait_object, $register_macro, serde_flexitos::id::Ident<'static>, serde_flexitos::type_to_ident);
+  };
+  ($trait_object:ident, $register_macro:ident, $ident:ty, $($type_to_ident:ident)::*) => {
     paste::paste! {
-      create_registry!($trait_object, $register_macro, [<$trait_object:snake:upper _DESERIALIZE_REGISTRY>], [<$trait_object:snake:upper _DESERIALIZE_REGISTRY_DISTRIBUTED_SLICE>]);
+      create_registry!($trait_object, $register_macro, $ident, $($type_to_ident)::*, [<$trait_object:snake:upper _DESERIALIZE_REGISTRY>], [<$trait_object:snake:upper _DESERIALIZE_REGISTRY_DISTRIBUTED_SLICE>]);
     }
   };
-  ($trait_object:ident, $register_macro:ident, $registry:ident, $distributed_slice:ident) => {
+  ($trait_object:ident, $register_macro:ident, $ident:ty, $($type_to_ident:ident)::*, $registry:ident, $distributed_slice:ident) => {
     #[linkme::distributed_slice]
-    pub static $distributed_slice: [fn(&mut serde_flexitos::MapRegistry<dyn $trait_object>)] = [..];
+    pub static $distributed_slice: [fn(&mut serde_flexitos::MapRegistry<dyn $trait_object, $ident>)] = [..];
 
-    static $registry: once_cell::sync::Lazy<serde_flexitos::MapRegistry<dyn $trait_object>> = once_cell::sync::Lazy::new(|| {
-      let mut registry = serde_flexitos::MapRegistry::<dyn $trait_object>::new(stringify!($trait_object));
+    static $registry: once_cell::sync::Lazy<serde_flexitos::MapRegistry<dyn $trait_object, $ident>> = once_cell::sync::Lazy::new(|| {
+      let mut registry = serde_flexitos::MapRegistry::<dyn $trait_object, $ident>::new(stringify!($trait_object));
       for registry_fn in $distributed_slice {
         registry_fn(&mut registry);
       }
@@ -34,7 +37,7 @@ macro_rules! create_registry {
         const fn __check_erased_serialize_supertrait<T: ?Sized + $trait_object>() {
           serde_flexitos::ser::require_erased_serialize_impl::<T>();
         }
-        serde_flexitos::serialize_trait_object(serializer, self.id(), self)
+        serde_flexitos::serialize_trait_object(serializer, <Self as serde_flexitos::id::IdObj<$ident>>::id(self), self)
       }
     }
 
@@ -48,9 +51,29 @@ macro_rules! create_registry {
 
     #[macro_export]
     macro_rules! $register_macro {
+      ($generic:ident<$arg:ty>) => {
+        impl serde_flexitos::id::Id<$ident> for $generic<$arg> {
+          const ID: $ident = $($type_to_ident)::*!($generic<$arg>);
+        }
+        impl Into<Box<dyn $trait_object>> for $generic<$arg> where {
+          #[inline]
+          fn into(self) -> Box<dyn $trait_object> {
+            Box::new(self)
+          }
+        }
+
+        paste::paste! {
+          #[linkme::distributed_slice($distributed_slice)]
+          #[inline]
+          fn [< __register_ $generic:snake _ $arg:snake >](registry: &mut serde_flexitos::MapRegistry<dyn $trait_object, $ident>) {
+            use serde_flexitos::Registry;
+            registry.register_id_type::<$generic<$arg>>();
+          }
+        }
+      };
       ($concrete:ty) => {
-        impl serde_flexitos::id::Id for $concrete {
-          const ID: &'static str = stringify!($concrete);
+        impl serde_flexitos::id::Id<$ident> for $concrete {
+          const ID: $ident = $($type_to_ident)::*!($concrete);
         }
         impl Into<Box<dyn $trait_object>> for $concrete where {
           #[inline]
@@ -62,14 +85,14 @@ macro_rules! create_registry {
         paste::paste! {
           #[linkme::distributed_slice($distributed_slice)]
           #[inline]
-          fn [< __register_ $concrete:snake >](registry: &mut serde_flexitos::MapRegistry<dyn $trait_object>) {
+          fn [< __register_ $concrete:snake >](registry: &mut serde_flexitos::MapRegistry<dyn $trait_object, $ident>) {
             use serde_flexitos::Registry;
             registry.register_id_type::<$concrete>();
           }
         }
-      }
+      };
     }
-  }
+  };
 }
 
 // Example trait
@@ -96,15 +119,16 @@ impl Example for Foo {}
 register_example!(Foo);
 
 #[derive(Clone, Serialize, Deserialize, Debug)]
-struct Bar(usize);
-impl Example for Bar {}
-register_example!(Bar);
+struct Bar<T>(T);
+impl Example for Bar<usize> {}
+impl Example for Bar<f32> {}
+register_example!(Bar<usize>); // It even works with generic instantiations with a single type argument.
+register_example!(Bar<f32>);
 
 // Run serialization roundtrips
 
 fn main() -> Result<(), Box<dyn Error>> {
   let foo = Foo("A".to_string());
-  let bar = Bar(0);
 
   { // Normal serialization roundtrip
     let json = serde_json::to_string(&foo)?;
@@ -124,7 +148,7 @@ fn main() -> Result<(), Box<dyn Error>> {
   }
 
   { // `Vec<Box<dyn ExampleObj>>` serialization roundtrip
-    let examples: Vec<Box<dyn ExampleObj>> = vec![Box::new(foo.clone()), Box::new(bar.clone())];
+    let examples: Vec<Box<dyn ExampleObj>> = vec![Box::new(foo.clone()), Box::new(Bar(42))];
     let json = serde_json::to_string(&examples)?;
     println!("`Vec<Box<dyn ExampleObj>>`   serialized: {}", json);
 
@@ -135,7 +159,8 @@ fn main() -> Result<(), Box<dyn Error>> {
   { // `HashMap<String, Box<dyn ExampleObj>>` serialization roundtrip
     let mut examples = HashMap::<String, Box<dyn ExampleObj>>::new();
     examples.insert("foo".to_string(), Box::new(foo.clone()));
-    examples.insert("bar".to_string(), Box::new(bar.clone()));
+    examples.insert("bar with f32".to_string(), Box::new(Bar(42.1337)));
+    examples.insert("bar with usize".to_string(), Box::new(Bar(1337)));
     let json = serde_json::to_string(&examples)?;
     println!("`HashMap<String, Box<dyn ExampleObj>>`   serialized: {}", json);
 
