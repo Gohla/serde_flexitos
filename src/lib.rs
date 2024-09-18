@@ -79,10 +79,12 @@
 //!
 //! use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 //!
-//! // Trait we want to serialize trait objects of. This example just uses `Debug` as supertrait so we can print values.
+//! // Trait we want to serialize trait objects of. This example just uses `Debug` as supertrait so we can
+//! // print values.
 //!
 //! pub trait Example: erased_serde::Serialize + std::fmt::Debug {
-//!   // Gets the ID that uniquely identifies the concrete type of this value. Must be a method for object safety.
+//!   // Gets the ID uniquely identifying the concrete type of this value. Must be a method for object
+//!   // safety.
 //!   fn id(&self) -> &'static str;
 //! }
 //!
@@ -106,8 +108,8 @@
 //!   fn id(&self) -> &'static str { Self::ID }
 //! }
 //!
-//! // Create registry for `Example` and register all concrete types with it. Store in static with `LazyLock` to lazily
-//! // initialize it once while being able to create global references to it.
+//! // Create registry for `Example` and register all concrete types with it. Store in static with
+//! // `LazyLock` to lazily initialize it once while being able to create global references to it.
 //!
 //! static EXAMPLE_REGISTRY: LazyLock<MapRegistry<dyn Example>> = LazyLock::new(|| {
 //!   let mut registry = MapRegistry::<dyn Example>::new("Example");
@@ -120,7 +122,8 @@
 //!
 //! impl<'a> Serialize for dyn Example + 'a {
 //!   fn serialize<S: Serializer >(&self, serializer: S) -> Result<S::Ok, S::Error> {
-//!     // Check that `Example` has `erased_serde::Serialize` as a supertrait, preventing infinite recursion at runtime.
+//!     // Check that `Example` has `erased_serde::Serialize` as a supertrait, preventing infinite
+//!     // recursion at runtime.
 //!     const fn __check_erased_serialize_supertrait<T: ?Sized + Example>() {
 //!       serde_flexitos::ser::require_erased_serialize_impl::<T>();
 //!     }
