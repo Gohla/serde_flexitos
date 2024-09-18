@@ -74,7 +74,7 @@
 //! An example, using a global registry to get some convenience:
 //!
 //! ```
-//! use once_cell::sync::Lazy;
+//! use std::sync::LazyLock;
 //! use serde::{Deserialize, Deserializer, Serialize, Serializer};
 //!
 //! use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
@@ -106,10 +106,10 @@
 //!   fn id(&self) -> &'static str { Self::ID }
 //! }
 //!
-//! // Create registry for `Example` and register all concrete types with it. Store in static with `Lazy` to lazily
+//! // Create registry for `Example` and register all concrete types with it. Store in static with `LazyLock` to lazily
 //! // initialize it once while being able to create global references to it.
 //!
-//! static EXAMPLE_REGISTRY: Lazy<MapRegistry<dyn Example>> = Lazy::new(|| {
+//! static EXAMPLE_REGISTRY: LazyLock<MapRegistry<dyn Example>> = LazyLock::new(|| {
 //!   let mut registry = MapRegistry::<dyn Example>::new("Example");
 //!   registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
 //!   registry.register(Bar::ID, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));

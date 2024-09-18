@@ -1,13 +1,12 @@
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
-use std::collections::BTreeMap;
-use std::error::Error;
-use std::fmt::Debug;
-
 use serde_flexitos::ser::require_erased_serialize_impl;
 #[allow(unused_imports)]
 use serde_flexitos::MapRegistry;
 use serde_flexitos::{serialize_trait_object, DeserializeFn, GetError, Registry};
+use std::collections::BTreeMap;
+use std::error::Error;
+use std::fmt::Debug;
+use std::sync::LazyLock;
 
 // Custom registry implementation
 
@@ -80,7 +79,7 @@ impl ExampleObj for Foo {
 
 // Registry
 
-static EXAMPLE_OBJ_REGISTRY: Lazy<FirstMapRegistry<dyn ExampleObj>> = Lazy::new(|| {
+static EXAMPLE_OBJ_REGISTRY: LazyLock<FirstMapRegistry<dyn ExampleObj>> = LazyLock::new(|| {
   // Use our custom `FirstMapRegistry` here.
   let mut registry = FirstMapRegistry::<dyn ExampleObj>::new("ExampleObj");
   registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));

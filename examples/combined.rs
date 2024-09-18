@@ -1,11 +1,10 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::error::Error;
 use std::fmt::Debug;
+use std::sync::LazyLock;
 
-use once_cell::sync::Lazy;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 use serde_flexitos::ser::require_erased_serialize_impl;
+use serde_flexitos::{serialize_trait_object, MapRegistry, Registry};
 
 // Example traits
 
@@ -45,14 +44,14 @@ impl Example2Obj for Bar {
 
 // Registries
 
-static EXAMPLE_1_OBJ_REGISTRY: Lazy<MapRegistry<dyn Example1Obj>> = Lazy::new(|| {
+static EXAMPLE_1_OBJ_REGISTRY: LazyLock<MapRegistry<dyn Example1Obj>> = LazyLock::new(|| {
   let mut registry = MapRegistry::<dyn Example1Obj>::new("Example1Obj");
   registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
   registry.register(Bar::ID, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));
   registry
 });
 
-static EXAMPLE_2_OBJ_REGISTRY: Lazy<MapRegistry<dyn Example2Obj>> = Lazy::new(|| {
+static EXAMPLE_2_OBJ_REGISTRY: LazyLock<MapRegistry<dyn Example2Obj>> = LazyLock::new(|| {
   let mut registry = MapRegistry::<dyn Example2Obj>::new("Example2Obj");
   registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
   registry.register(Bar::ID, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));

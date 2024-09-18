@@ -1,12 +1,11 @@
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
+use std::sync::LazyLock;
 
-use once_cell::sync::Lazy;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
-
-use serde_flexitos::{MapRegistry, Registry, serialize_trait_object};
 use serde_flexitos::ser::require_erased_serialize_impl;
+use serde_flexitos::{serialize_trait_object, MapRegistry, Registry};
 
 // Example trait
 
@@ -62,14 +61,14 @@ impl<T: 'static> Into<Box<dyn ExampleObj<T>>> for Bar<T> where
 
 // Registries
 
-static EXAMPLE_OBJ_STRING_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<String>>> = Lazy::new(|| {
+static EXAMPLE_OBJ_STRING_REGISTRY: LazyLock<MapRegistry<dyn ExampleObj<String>>> = LazyLock::new(|| {
   let mut registry = MapRegistry::<dyn ExampleObj<String>>::new("ExampleObj<String>");
   registry.register_type::<Foo>(Foo::STRING_KEY);
   registry.register_type::<Bar<String>>(Bar::<String>::KEY);
   registry
 });
 
-static EXAMPLE_OBJ_USIZE_REGISTRY: Lazy<MapRegistry<dyn ExampleObj<usize>>> = Lazy::new(|| {
+static EXAMPLE_OBJ_USIZE_REGISTRY: LazyLock<MapRegistry<dyn ExampleObj<usize>>> = LazyLock::new(|| {
   let mut registry = MapRegistry::<dyn ExampleObj<usize>>::new("ExampleObj<usize>");
   registry.register_type::<Foo>(Foo::USIZE_KEY);
   registry.register_type::<Bar<usize>>(Bar::<usize>::KEY);

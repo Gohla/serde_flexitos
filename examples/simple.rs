@@ -1,8 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error;
 use std::fmt::Debug;
-
-use once_cell::sync::Lazy;
+use std::sync::LazyLock;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use serde::de::DeserializeOwned;
 
@@ -50,7 +49,7 @@ impl Example for Bar {
 
 // Registry
 
-static EXAMPLE_OBJ_REGISTRY: Lazy<MapRegistry<dyn ExampleObj>> = Lazy::new(|| {
+static EXAMPLE_OBJ_REGISTRY: LazyLock<MapRegistry<dyn ExampleObj>> = LazyLock::new(|| {
   let mut registry = MapRegistry::<dyn ExampleObj>::new("ExampleObj");
   registry.register(Foo::ID, |d| Ok(Box::new(erased_serde::deserialize::<Foo>(d)?)));
   registry.register(Bar::ID, |d| Ok(Box::new(erased_serde::deserialize::<Bar>(d)?)));

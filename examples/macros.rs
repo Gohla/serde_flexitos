@@ -23,7 +23,7 @@ macro_rules! create_registry {
     #[linkme::distributed_slice]
     pub static $distributed_slice: [fn(&mut serde_flexitos::MapRegistry<dyn $trait_object, $ident>)] = [..];
 
-    static $registry: once_cell::sync::Lazy<serde_flexitos::MapRegistry<dyn $trait_object, $ident>> = once_cell::sync::Lazy::new(|| {
+    static $registry: std::sync::LazyLock<serde_flexitos::MapRegistry<dyn $trait_object, $ident>> = std::sync::LazyLock::new(|| {
       let mut registry = serde_flexitos::MapRegistry::<dyn $trait_object, $ident>::new(stringify!($trait_object));
       for registry_fn in $distributed_slice {
         registry_fn(&mut registry);

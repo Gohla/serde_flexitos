@@ -25,7 +25,6 @@ permissive = []
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 linkme = "0.3"
-once_cell = "1"
 paste = "1"
 
 [[example]]
