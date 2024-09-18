@@ -7,6 +7,14 @@ All notable changes to this project are documented in this file, based on [Keep 
 
 
 ## [0.2.2] - 2024-09-18
+### Changed
+- Make error documentation more precise and add error handling section.
+- Use `LazyLock` instead of `Lazy` from `once_cell` in examples.
+- Document features and mark them as experimental/work-in-progress.
+
+### Added
+- Add an example showing a custom registry implementation that ignores
+  duplicate registrations.
 
 
 ## [0.2.1] - 2024-03-16
