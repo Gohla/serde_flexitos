@@ -6,6 +6,9 @@ All notable changes to this project are documented in this file, based on [Keep 
 ## [Unreleased]
 
 
+## [0.2.2] - 2024-09-18
+
+
 ## [0.2.1] - 2024-03-16
 ### Fixed
 - Prevent infinite recursion by checking that trait objects implement `erased_serde::Serialize`, using the same trick 
@@ -24,7 +27,8 @@ All notable changes to this project are documented in this file, based on [Keep 
 
 # References
 
-[Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.1...HEAD
+[Unreleased]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.2...HEAD
+[0.2.2]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.1...release/0.2.2
 [0.2.1]: https://github.com/Gohla/serde_flexitos/compare/release/0.2.0...release/0.2.1
 [0.2.0]: https://github.com/Gohla/serde_flexitos/compare/release/0.1.0...release/0.2.0
 [0.1.0]: https://github.com/Gohla/serde_flexitos/compare/...release/0.1.0
