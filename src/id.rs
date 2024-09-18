@@ -1,3 +1,5 @@
+//! Experimental/work-in-progress trait, macros, and implementations for unique and stable type identifiers.
+
 use std::fmt::{Display, Formatter, Write};
 use std::path::{Path, PathBuf};
 use std::rc::Rc;

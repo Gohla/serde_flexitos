@@ -16,7 +16,9 @@ erased-serde = "0.4"
 
 [features]
 default = []
+# Experimental/work-in-progress trait, macros, and implementations for unique and stable type identifiers.
 id_trait = ["serde/derive"]
+# Experimental/work-in-progress `DeserializeSeed` and `Visitor` implementations for permissive deserialization.
 permissive = []
 
 [dev-dependencies]

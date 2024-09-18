@@ -1,6 +1,6 @@
-//! [`DeserializeSeed`] and [`Visitor`] implementations for permissive deserialization of trait objects and collections
-//! of trait objects. Instead of returning an error, permissive deserialization returns `None` or skips adding a trait
-//! object to a collection, when no deserialize function is registered for a concrete type. WIP!
+//! Experimental/work-in-progress [`DeserializeSeed`] and [`Visitor`] implementations for permissive deserialization of
+//! trait objects and collections of trait objects. Instead of returning an error, permissive deserialization returns
+//! `None` or skips adding a trait object to a collection, when no deserialize function is registered for a concrete type.
 
 use std::fmt::{self, Debug, Display, Formatter};
 

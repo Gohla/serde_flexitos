@@ -49,14 +49,15 @@
 //! the concrete type using that ID, and then deserializing the value with that deserialize impl.
 //!
 //! An ID must uniquely identify a concrete type of a trait object, and be stable over time, in order for
-//! deserialization to keep working over time. Missing or duplicate IDs will result in (recoverable) errors during
-//! deserialization.
+//! deserialization to keep working over time. Missing IDs will result in recoverable errors during deserialization.
+//! Duplicate IDs by default also result in recoverable errors during deserialization, but this behaviour can be
+//! customized; see [Error Handling](#error-handling).
 //!
 //! # How do I use this crate?
 //!
-//! A [registry](Registry) handles registration of [`Deserialize`] impls and finding them by ID. For each trait object
-//! you wish to deserialize, you must construct a registry and register all concrete types with it. Currently,
-//! [`MapRegistry`] is the only registry implementation.
+//! A [`Registry`] handles registration of [`Deserialize`] impls and finding them by ID. For each trait object
+//! you wish to deserialize, you must construct a registry and register all concrete types with it. [`MapRegistry`] is
+//! the standard registry implementation that maps IDs to deserialize impls.
 //!
 //! To [register](Registry::register) a concrete type, we must provide:
 //! 1) the ID (`&'static str`) for that concrete type,
@@ -146,13 +147,56 @@
 //! }
 //! ```
 //!
-//! Check out the examples for more use-cases:
-//! - `example/simple.rs`: A full version of the above example.
-//! - `example/macros.rs`: Convenience macro layered on top of this crate, using [linkme][linkme] to register types.
-//! - `example/no_global.rs`: Use a local registry instead of a global one, using [`DeserializeSeed`] implementations
+//! See `examples/simple.rs` for a full version of the above example.
+//!
+//! # Error Handling
+//!
+//! Registration is infallible because registration can be done in static initializers, and dealing with errors in
+//! static initialization functions is awkward. Instead, registration failures are propagated to deserialization-time,
+//! depending on which [`Registry`] implementation is used.
+//!
+//! Deserialization of trait objects is fallible because deserializing any concrete type is fallible, for example if the
+//! serialized data is malformed. Additionally, deserialization can fail when:
+//!
+//! 1) The serialized data contains an ID for which no deserialize impl was registered. This occurs when
+//!    [`Registry::get_deserialize_fn`] returns [`GetError::NotRegistered`]. This is an error because we cannot
+//!    deserialize anything without a corresponding deserialize impl.
+//! 2) The serialized data contains an ID for which multiple deserialize impls were registered. This occurs when
+//!    [`Registry::get_deserialize_fn`] returns [`GetError::MultipleRegistrations`]. This is an error because we don't
+//!    know which of the deserialize impls we need to use.
+//!
+//! Whether [`Registry::get_deserialize_fn`] returns one of these errors depends on the implementation. The standard
+//! [`MapRegistry`] implementation returns these errors as a safe default. You can create your own [`Registry`]
+//! implementation if you want different behaviour. For example, a registry that ignores multiple registrations and
+//! instead chooses the first registration. See `examples/first_registration.rs` for an example of that.
+//!
+//! Finally, serialization of trait objects is fallible because serializing the concrete type behind the trait object
+//! is fallible. Additionally, serialization could fail due to the serializer not being able to serialize an ID. For
+//! example, JSON only supports maps (key-value pairs) with string keys, and would thus fail with IDs that cannot be
+//! serialized to a string.
+//!
+//! # Examples
+//!
+//! Check out the examples in the `examples` directory for more use-cases:
+//!
+//! - `examples/simple.rs`: A full version of the above example.
+//! - `examples/combined.rs`: Define 2 traits, then combine both traits as boxed trait objects in a struct, and
+//!   (de)serialize that struct. This shows how trait objects can be combined/composed.
+//! - `examples/first_registration.rs`: Custom [`Registry`] implementation that ignores multiple registrations and
+//!   instead chooses the first registration
+//! - `examples/macros.rs`: Convenience macro layered on top of this crate, using [linkme][linkme] to register types.
+//! - `examples/no_global.rs`: Use a local registry instead of a global one, using [`DeserializeSeed`] implementations
 //!   provided by this crate.
-//! - `example/generic_instantiations.rs`: Create and use registries for _instantiations_ of generic traits/structs.
+//! - `examples/generic_instantiations.rs`: Create and use registries for _instantiations_ of generic traits/structs.
 //!   Does not handle traits nor structs generically though!
+//!
+//! # Experimental Features
+//!
+//! This library has experimental features that are unstable and work-in-progress. Enable and use these features at your
+//! own risk.
+//!
+//! - `permissive`: [`DeserializeSeed`] and [`Visitor`] implementations for permissive deserialization.
+//! - `id`: Trait, macros, and implementations for unique and stable type identifiers.
 //!
 //! # Limitations
 //!
@@ -190,9 +234,9 @@ use std::collections::BTreeMap;
 use std::error::Error;
 use std::fmt::{Debug, Display, Formatter};
 
-use serde::de::{DeserializeOwned, Deserializer, DeserializeSeed};
-use serde::Deserialize;
+use serde::de::{DeserializeOwned, DeserializeSeed, Deserializer};
 use serde::ser::{Serialize, Serializer};
+use serde::Deserialize;
 
 pub mod ser;
 pub mod de;
@@ -219,8 +263,8 @@ pub fn serialize_trait_object<S, I, O>(
 /// Type alias for deserialize functions of trait object type `O`.
 pub type DeserializeFn<O> = for<'de> fn(&mut dyn erased_serde::Deserializer<'de>) -> Result<Box<O>, erased_serde::Error>;
 
-/// Registry mapping unique identifiers of types to their deserialize implementations, enabling deserialization of a specific
-/// trait object type.
+/// Registry mapping unique identifiers of types to their deserialize implementations, enabling deserialization of a
+/// specific trait object type.
 pub trait Registry {
   /// The type of unique identifiers this registry uses. `&'static str` is used as a default.
   type Identifier;
@@ -229,19 +273,19 @@ pub trait Registry {
 
   /// Register `deserialize_fn` as the deserialize function for `id`.
   ///
-  /// If `id` was already registered before, [get_deserialize_fn](Self::get_deserialize_fn) will forever return
-  /// `Err(MultipleRegistrations)` for that `id`.
+  /// This method is infallible, but errors such as multiple registrations for `id` may be propagated to
+  /// deserialization-time by making [get_deserialize_fn](Self::get_deserialize_fn) return an error.
   fn register(&mut self, id: Self::Identifier, deserialize_fn: DeserializeFn<Self::TraitObject>);
 
   /// Register a default deserialize function for type `T` as the deserialize function for `id`. `T` must implement
   /// [`DeserializeOwned`] and must be convertable into [`Box<Self::TraitObject>`] with
   /// [`Into<Box<Self::TraitObject>>`].
   ///
-  /// If `id` was already registered before, [get_deserialize_fn](Self::get_deserialize_fn) will forever return
-  /// `Err(MultipleRegistrations)` for that `id`.
+  /// This method is infallible, but errors such as multiple registrations for `id` may be propagated to
+  /// deserialization-time by making [get_deserialize_fn](Self::get_deserialize_fn) return an error.
   #[inline]
   fn register_type<T>(&mut self, id: Self::Identifier) where
-    T: DeserializeOwned + Into<Box<Self::TraitObject>>
+    T: DeserializeOwned + Into<Box<Self::TraitObject>>,
   {
     self.register(id, |d| {
       let deserialized = erased_serde::deserialize::<T>(d)?;
@@ -254,12 +298,12 @@ pub trait Registry {
   /// [`Id`](id::Id) and [`DeserializeOwned`], and must be convertable into [`Box<Self::TraitObject>`] with
   /// [`Into<Box<Self::TraitObject>>`].
   ///
-  /// If `T::ID` was already registered before, [get_deserialize_fn](Self::get_deserialize_fn) will forever return
-  /// `Err(MultipleRegistrations)` for that `T::ID`.
+  /// This method is infallible, but errors such as multiple registrations for `T::ID` may be propagated to
+  /// deserialization-time by making [get_deserialize_fn](Self::get_deserialize_fn) return an error.
   #[cfg(feature = "id_trait")]
   #[inline]
   fn register_id_type<T>(&mut self) where
-    T: id::Id<Self::Identifier> + DeserializeOwned + Into<Box<Self::TraitObject>>
+    T: id::Id<Self::Identifier> + DeserializeOwned + Into<Box<Self::TraitObject>>,
   {
     self.register_type::<T>(T::ID);
   }
@@ -269,7 +313,8 @@ pub trait Registry {
   ///
   /// # Errors
   ///
-  /// Returns an error if 0 or more than 1 deserialize functions were registered for the deserialized ID.
+  /// Returns an error when [get_deserialize_fn](Self::get_deserialize_fn) returns an error for the deserialized ID, or
+  /// when deserialization fails.
   #[inline]
   fn deserialize_trait_object<'de, D>(&self, deserializer: D) -> Result<Box<Self::TraitObject>, D::Error> where
     D: Deserializer<'de>,
@@ -282,6 +327,8 @@ pub trait Registry {
   /// Gets the deserialize function for `id`.
   ///
   /// # Errors
+  ///
+  /// Implementations may return the following errors:
   ///
   /// - `GetError::NotRegistered { id }` if no deserialize function was registered for `id`.
   /// - `GetError::MultipleRegistrations { id }` if multiple deserialize functions were registered for `id`.
@@ -353,4 +400,3 @@ impl<O: ?Sized, I: Ord> Registry for MapRegistry<O, I> {
     self.trait_object_name
   }
 }
-
